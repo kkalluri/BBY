@@ -62,7 +62,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-
+    //for livedata as state
+    implementation("androidx.compose.runtime:runtime-livedata")
 
     // Dagger hilt
     implementation("com.google.dagger:hilt-android:2.44.2")

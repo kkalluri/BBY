@@ -1,5 +1,7 @@
 package com.example.bbytechnical.features
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bbytechnical.data.remote.NetworkResult
@@ -15,6 +17,13 @@ import javax.inject.Inject
  * Created by venkatakalluri on 11/21/23.
  */
 class DogBreedViewModel @Inject constructor(val repository: BreedRepositoryImp) : ViewModel(){
+
+    private val _selectedItem = MutableLiveData<String>()
+    val selectedItem: LiveData<String> get() = _selectedItem
+
+    fun updateSelectedItem(item: String) {
+        _selectedItem.value = item
+    }
 
     private val _breeds = MutableStateFlow<NetworkResult<List<String>>>(
         NetworkResult.Loading(false)

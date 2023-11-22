@@ -1,5 +1,6 @@
 package com.example.bbytechnical.features
 
+import androidx.compose.foundation.background
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -37,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -55,14 +58,7 @@ import com.example.bbytechnical.R
 @Composable
 fun DogBreedScreen(viewModel: DogBreedViewModel) {
     val dogBreesResult by viewModel.breeds.collectAsState()
-    val dogImagesResult by viewModel.dogImages.collectAsState()
-
-    var allBreeds by remember { mutableStateOf<List<String>>(emptyList()) }
-    var dogImages by remember { mutableStateOf<List<String>>(emptyList()) }
-    var errorMessage: String? = null
-    var imageErrorMessage: String? = null
-
-    var isLoading by remember { mutableStateOf<Boolean>(false) }
+    var isSelected by rememberSaveable { mutableStateOf(false) }
 
     // Use LaunchedEffect to trigger the API call when the Composable is first displayed
     LaunchedEffect(true) {
@@ -74,81 +70,40 @@ fun DogBreedScreen(viewModel: DogBreedViewModel) {
 
     when (dogBreesResult) {
         is NetworkResult.Loading -> {
-            isLoading = !isLoading
+            LoadingBar()
         }
 
         is NetworkResult.Success -> {
-            allBreeds = (dogBreesResult as NetworkResult.Success<List<String>>).data.toMutableList()
-            isLoading = !isLoading
-        }
+            var allBreeds =
+                (dogBreesResult as NetworkResult.Success<List<String>>).data.toMutableList()
 
-        is NetworkResult.Failure -> {
-            errorMessage =
-                (dogBreesResult as NetworkResult.Failure<List<String>>).errorMessage
-            isLoading = !isLoading
-        }
-    }
-
-    when (dogImagesResult) {
-        is NetworkResult.Loading -> {
-            isLoading = !isLoading
-        }
-
-        is NetworkResult.Success -> {
-            dogImages =
-                (dogImagesResult as NetworkResult.Success<List<String>>).data.toMutableList()
-            isLoading = !isLoading
-        }
-
-        is NetworkResult.Failure -> {
-            imageErrorMessage =
-                (dogImagesResult as NetworkResult.Failure<List<String>>).errorMessage
-            isLoading = !isLoading
-        }
-    }
-
-    Scaffold(
-        topBar = { AppBar() },
-        content = { it ->
-            if (isLoading) {
-                LoadingBar()
-            } else {
-                if (errorMessage == null) {
-                    Column(
-                        Modifier
-                            .padding(20.dp)
-                            .padding(it)
-                    ) {
-                        showBreedPicker(dogBreeds = allBreeds) {
-                            viewModel.fetchDogImages(it)
-                        }
-
-                        if (imageErrorMessage == null) {
-                            DogImagesScreen(dogImages)
-                            if (dogImages.isEmpty()) {
-                                Text(
-                                    text = "No images found",
-                                    color = Color.Red,
-                                    modifier = Modifier.padding(top = 10.dp)
-                                )
-                            }
-                        } else {
-                            // Display an error message
-                            Text(text = imageErrorMessage, color = Color.Red)
-                        }
-                    }
-                } else {
-                    // Display an error message
-                    Column(Modifier.padding(20.dp)) {
-                        Text(text = errorMessage, color = Color.Red)
-                    }
+            var modifier = Modifier
+                .padding(20.dp)
+            if (!isSelected) {
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxSize()
+            }
+            Column(
+                modifier = modifier
+            ) {
+                showBreedPicker(dogBreeds = allBreeds) {
+                    isSelected = true
+                    viewModel.updateSelectedItem(it)
                 }
             }
-
-
         }
-    )
 
+        is NetworkResult.Failure -> {
+            var errorMessage =
+                (dogBreesResult as NetworkResult.Failure<List<String>>).errorMessage
+            Text(
+                text = errorMessage, color = Color.Red, modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxSize()
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -225,18 +180,11 @@ fun LoadingBar() {
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize()
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(50.dp)
+                .background(Color.Red)
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AppBar() {
-    TopAppBar(
-        title = { Text(stringResource(R.string.app_name)) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer, // Set your desired background color
-            titleContentColor = MaterialTheme.colorScheme.primary, // Set the text and icon color
-        )
-    )
-}
